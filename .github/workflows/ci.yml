@@ -50,6 +50,18 @@ jobs:
         name: allure-report
         path: allure-report/
         retention-days: 30
+
+    # НОВЫЙ ШАГ: Отправка результатов в Allure TestOps
+    - name: Send to Allure TestOps
+      run: |
+        curl -X POST "https://allure.autotests.cloud/api/result" \
+          -H "Content-Type: application/json" \
+          -H "Authorization: Bearer ${{ secrets.ALLURE_TESTOPS_TOKEN }}" \
+          -d '{
+            "projectId": "${{ secrets.ALLURE_PROJECT_ID }}",
+            "results": "allure-results"
+          }'
+      continue-on-error: true
         
     - name: Send Telegram notification on success
       if: success()
@@ -62,9 +74,8 @@ jobs:
           
           📊 Репозиторий: ${{ github.repository }}
           🔗 Коммит: ${{ github.sha }}
-          🌐 Подробности: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          
-          Allure отчет будет доступен в артефактах сборки.
+          🌐 GitHub Actions: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          📈 Allure TestOps: https://allure.autotests.cloud/project/PW
 
     - name: Send Telegram notification on failure
       if: failure()
@@ -78,5 +89,4 @@ jobs:
           📊 Репозиторий: ${{ github.repository }}
           🔗 Коммит: ${{ github.sha }}
           🌐 Логи: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          
-          Проверьте логи для деталей.
+          📈 Allure TestOps: https://allure.autotests.cloud/project/PW
