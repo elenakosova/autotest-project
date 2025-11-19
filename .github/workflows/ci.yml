@@ -78,22 +78,24 @@ jobs:
           user_name: 'github-actions[bot]'
           user_email: 'github-actions[bot]@users.noreply.github.com'
 
-      - name: Install allurectl
+      - name: Install and setup allurectl
+        if: always()
         run: |
-          # Создаем директорию для allurectl
-          mkdir -p $HOME/bin
           # Скачиваем allurectl
-          curl -o $HOME/bin/allurectl -L "https://github.com/allure-framework/allurectl/releases/latest/download/allurectl_linux_amd64"
-          # Делаем исполняемым
-          chmod +x $HOME/bin/allurectl
-          # Добавляем в PATH
-          echo "$HOME/bin" >> $GITHUB_PATH
+          curl -L "https://github.com/allure-framework/allurectl/releases/latest/download/allurectl_linux_amd64" -o allurectl
+          # Даем права на выполнение
+          chmod +x allurectl
+          # Перемещаем в директорию, которая точно в PATH
+          sudo mv allurectl /usr/local/bin/
+          # Проверяем что установился
+          which allurectl
+          allurectl version
 
       - name: Upload results to Allure TestOps
         if: always()
         run: |
           allurectl upload allure-results \
-            --endpoint https://allure.autotools.cloud \
+            --endpoint https://allure.autotests.cloud \
             --project-id 5014 \
             --token ${{ secrets.ALLURE_TOKEN }} \
             --launch-name "GitHub Run #${{ github.run_number }}"
