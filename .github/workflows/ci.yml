@@ -48,25 +48,24 @@ jobs:
             allure-results
             allure-report
           retention-days: 30
-      
-      - name: Upload test results from last run to Github
+
+      - name: Setup GitHub Pages branch
         uses: actions/checkout@v4
         if: always()
-        continue-on-error: true
         with:
           ref: gh-pages
           path: gh-pages
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Generate Allure report for GitHub Pages
-        uses: simple-elf/allure-report-action@master
+      - name: Prepare Allure report for GitHub Pages
         if: always()
-        with:
-          allure_results: allure-results
-          gh_pages: gh-pages
-          allure_report: allure-report
-          allure_history: allure-history
-          keep_reports: 20
+        run: |
+          # Удаляем всё в gh-pages кроме .git
+          find gh-pages -maxdepth 1 ! -name '.git' ! -name 'gh-pages' -exec rm -rf {} + 2>/dev/null || true
+          # Копируем новый отчет
+          cp -r allure-report/* gh-pages/
+          # Создаем .nojekyll файл для правильного отображения
+          touch gh-pages/.nojekyll
 
       - name: Deploy Allure report to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
@@ -74,7 +73,10 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_branch: gh-pages
-          publish_dir: allure-history
+          publish_dir: gh-pages
+          force_orphan: true
+          user_name: 'github-actions[bot]'
+          user_email: 'github-actions[bot]@users.noreply.github.com'
 
       - name: Install allurectl
         run: |
