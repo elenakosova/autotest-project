@@ -51,26 +51,31 @@ jobs:
         path: allure-report/
         retention-days: 30
 
-    # Подготовка данных для Allure TestOps
-    - name: Prepare Allure TestOps data
+    # ИНТЕГРАЦИЯ С ALLURE TESTOPS (ID проекта: 5014)
+    - name: Upload to Allure TestOps
       run: |
-        echo "Preparing Allure TestOps integration..."
-        ls -la allure-results/
+        echo "=== Uploading to Allure TestOps ==="
         
-    # Загрузка в Allure TestOps через allurectl
-    - name: Upload to Allure TestOps via CLI
-      run: |
-        # Установка allurectl
-        wget https://github.com/allure-framework/allurectl/releases/latest/download/allurectl_linux_amd64 -O allurectl
+        # Скачиваем и настраиваем allurectl
+        wget -q https://github.com/allure-framework/allurectl/releases/latest/download/allurectl_linux_amd64 -O allurectl
         chmod +x allurectl
         
-        # Отправка результатов
+        # Проверяем что есть файлы для загрузки
+        echo "Files in allure-results:"
+        find allure-results/ -name "*.json" -o -name "*.txt" | head -10
+        
+        # Загружаем в Allure TestOps с ЧИСЛОВЫМ ID 5014
         ./allurectl upload \
-          --project-id PW \
+          --project-id 5014 \
           --endpoint https://allure.autotests.cloud \
           --username allure8 \
           --password allure8 \
+          --launch-name "GitHub Run #${{ github.run_number }}" \
+          --launch-tag "github-actions" \
+          --launch-tag "autotest-project" \
           allure-results
+        
+        echo "=== Upload completed ==="
       continue-on-error: true
         
     - name: Send Telegram notification on success
@@ -85,7 +90,7 @@ jobs:
           📊 Репозиторий: ${{ github.repository }}
           🔗 Коммит: ${{ github.sha }}
           🌐 GitHub Actions: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          📈 Allure TestOps: https://allure.autotests.cloud/project/PW
+          📈 Allure TestOps: https://allure.autotests.cloud/project/5014
 
     - name: Send Telegram notification on failure
       if: failure()
@@ -99,4 +104,4 @@ jobs:
           📊 Репозиторий: ${{ github.repository }}
           🔗 Коммит: ${{ github.sha }}
           🌐 Логи: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          📈 Allure TestOps: https://allure.autotests.cloud/project/PW
+          📈 Allure TestOps: https://allure.autotests.cloud/project/5014
