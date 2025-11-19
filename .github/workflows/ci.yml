@@ -51,16 +51,26 @@ jobs:
         path: allure-report/
         retention-days: 30
 
-    # НОВЫЙ ШАГ: Отправка результатов в Allure TestOps
-    - name: Send to Allure TestOps
+    # Подготовка данных для Allure TestOps
+    - name: Prepare Allure TestOps data
       run: |
-        curl -X POST "https://allure.autotests.cloud/api/result" \
-          -H "Content-Type: application/json" \
-          -H "Authorization: Bearer ${{ secrets.ALLURE_TESTOPS_TOKEN }}" \
-          -d '{
-            "projectId": "${{ secrets.ALLURE_PROJECT_ID }}",
-            "results": "allure-results"
-          }'
+        echo "Preparing Allure TestOps integration..."
+        ls -la allure-results/
+        
+    # Загрузка в Allure TestOps через allurectl
+    - name: Upload to Allure TestOps via CLI
+      run: |
+        # Установка allurectl
+        wget https://github.com/allure-framework/allurectl/releases/latest/download/allurectl_linux_amd64 -O allurectl
+        chmod +x allurectl
+        
+        # Отправка результатов
+        ./allurectl upload \
+          --project-id PW \
+          --endpoint https://allure.autotests.cloud \
+          --username allure8 \
+          --password allure8 \
+          allure-results
       continue-on-error: true
         
     - name: Send Telegram notification on success
