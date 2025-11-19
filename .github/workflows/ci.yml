@@ -1,9 +1,7 @@
-name: CI Tests
+name: CI Tests - Debug Allure TestOps
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
     branches: [ main ]
 
 jobs:
@@ -18,7 +16,6 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '18'
-        cache: 'npm'
         
     - name: Install dependencies
       run: npm ci
@@ -26,52 +23,17 @@ jobs:
     - name: Install Playwright
       run: npx playwright install
         
-    - name: Create Allure results directory
-      run: mkdir -p allure-results
+    - name: Run API tests
+      run: npx playwright test --project=api --reporter=line,allure-playwright
         
-    - name: Run API tests with Allure
-      run: |
-        echo "=== Running API Tests ==="
-        npx playwright test --project=api --reporter=line,allure-playwright
+    - name: Run UI tests
+      run: npx playwright test --project=ui --reporter=line,allure-playwright
       continue-on-error: true
-        
-    - name: Run UI tests with Allure
-      run: |
-        echo "=== Running UI Tests ==="
-        npx playwright test --project=ui --reporter=line,allure-playwright
-      continue-on-error: true
-        
-    - name: Check Allure results
-      run: |
-        echo "=== Checking Allure Results ==="
-        echo "Files in allure-results:"
-        find allure-results/ -type f | head -20 || echo "No files found"
-        echo "File count:"
-        find allure-results/ -type f | wc -l || echo "0"
-        
-    - name: Install Allure Commandline
-      run: |
-        echo "=== Installing Allure ==="
-        npm install -g allure-commandline
-        allure --version || echo "Allure not installed"
         
     - name: Generate Allure Report
       run: |
-        echo "=== Generating Allure Report ==="
+        npm install -g allure-commandline
         allure generate allure-results --clean -o allure-report
-        echo "Allure report generated"
-        
-    - name: List Allure report files
-      run: |
-        echo "=== Allure Report Files ==="
-        ls -la allure-report/ || echo "No allure-report directory"
-        
-    - name: Upload Allure results
-      uses: actions/upload-artifact@v4
-      with:
-        name: allure-results
-        path: allure-results/
-        retention-days: 30
         
     - name: Upload Allure report
       uses: actions/upload-artifact@v4
@@ -80,55 +42,79 @@ jobs:
         path: allure-report/
         retention-days: 30
 
-    # Allure TestOps integration
-    - name: Upload to Allure TestOps
+    # DEBUG: Проверяем Allure TestOps доступность
+    - name: Test Allure TestOps Connection
       run: |
-        echo "=== Uploading to Allure TestOps ==="
+        echo "=== Testing Allure TestOps Connection ==="
         
-        # Check if we have results to upload
-        if [ $(find allure-results/ -name "*.json" | wc -l) -eq 0 ]; then
-          echo "No Allure results found to upload"
-          exit 0
+        # Проверяем доступность API
+        api_response=$(curl -s -o /dev/null -w "%{http_code}" \
+          "https://allure.autotests.cloud/api/project/5014" \
+          -u "allure8:allure8")
+        
+        echo "API response code: $api_response"
+        
+        # Пробуем получить информацию о проекте
+        curl -s "https://allure.autotests.cloud/api/project/5014" \
+          -u "allure8:allure8" | head -100
+        
+    # DEBUG: Подробная загрузка в Allure TestOps
+    - name: Detailed Allure TestOps Upload
+      run: |
+        echo "=== Detailed Allure TestOps Upload ==="
+        
+        # Создаем временную папку для тестовых данных
+        mkdir -p test-upload
+        echo '{"name": "test", "status": "passed"}' > test-upload/test-result.json
+        
+        # Создаем архив
+        cd test-upload
+        zip -r ../test-upload.zip .
+        cd ..
+        
+        # Пробуем загрузить тестовые данные
+        echo "Uploading test data..."
+        response=$(curl -s -o response.txt -w "%{http_code}" \
+          -X POST "https://allure.autotests.cloud/api/result" \
+          -H "Content-Type: multipart/form-data" \
+          -u "allure8:allure8" \
+          -F "projectId=5014" \
+          -F "launchName=Test Upload" \
+          -F "files=@test-upload.zip")
+        
+        echo "Test upload response: $response"
+        if [ -f response.txt ]; then
+          echo "Test response body:"
+          cat response.txt
         fi
         
-        wget -q https://github.com/allure-framework/allurectl/releases/latest/download/allurectl_linux_amd64 -O allurectl
-        chmod +x allurectl
+        # Теперь загружаем реальные результаты
+        echo "Uploading real results..."
+        cd allure-results
+        zip -r ../real-results.zip .
+        cd ..
         
-        ./allurectl upload \
-          --project-id 5014 \
-          --endpoint https://allure.autotests.cloud \
-          --username allure8 \
-          --password allure8 \
-          --launch-name "GitHub Run #${{ github.run_number }}" \
-          allure-results
+        real_response=$(curl -s -o real-response.txt -w "%{http_code}" \
+          -X POST "https://allure.autotests.cloud/api/result" \
+          -H "Content-Type: multipart/form-data" \
+          -u "allure8:allure8" \
+          -F "projectId=5014" \
+          -F "launchName=GitHub Run ${{ github.run_number }}" \
+          -F "files=@real-results.zip")
         
-        echo "=== Upload to Allure TestOps completed ==="
-      continue-on-error: true
+        echo "Real upload response: $real_response"
+        if [ -f real-response.txt ]; then
+          echo "Real response body:"
+          cat real-response.txt | head -200
+        fi
         
-    - name: Send Telegram notification on success
-      if: success()
+    - name: Send Telegram notification
       uses: appleboy/telegram-action@master
       with:
         to: ${{ secrets.TELEGRAM_CHAT_ID }}
         token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
         message: |
-          ✅ Тесты завершены!
+          🔍 Debug workflow completed
           
-          📊 Репозиторий: ${{ github.repository }}
-          🔗 Коммит: ${{ github.sha }}
-          🌐 GitHub Actions: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          📈 Allure Report: Скачайте из артефактов сборки
-          📊 Allure TestOps: https://allure.autotests.cloud/project/5014
-
-    - name: Send Telegram notification on failure
-      if: failure()
-      uses: appleboy/telegram-action@master
-      with:
-        to: ${{ secrets.TELEGRAM_CHAT_ID }}
-        token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-        message: |
-          ⚠️ Workflow завершен с ошибками
-          
-          📊 Репозиторий: ${{ github.repository }}
-          🔗 Коммит: ${{ github.sha }}
-          🌐 Логи: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          Проверьте логи загрузки в Allure TestOps
+          Отчет Allure доступен в артефактах
