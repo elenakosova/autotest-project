@@ -135,26 +135,26 @@ jobs:
         run: |
           STATUS=${{ job.status }}
           if [ "$STATUS" = "success" ]; then
-            EMOJI="🍾"
-            STATUS_TEXT="BRAVO!"
+            EMOJI="🍏"
+            STATUS_TEXT="VICTORY"
           else
-            EMOJI="💀"
-            STATUS_TEXT="FATALITY"
+            EMOJI="🍎"
+            STATUS_TEXT="DEFEAT"
           fi
 
           MESSAGE="$EMOJI *$STATUS_TEXT* $EMOJI%0A\
           ━━━━━━━━━━━━━━━━━%0A\
-          📊 *Статистика тестов:*%0A\
+          📈 *Статистика тестов:*%0A\
           ▫️ Всего пройдено: *$TOTAL*%0A\
-          ✅ Успешные: *$PASSED*%0A\
-          ❌ Провалено: *$FAILED*%0A\
-          ⏭️ Пропущено: *$SKIPPED*%0A\
+          🥳 Успешно: *$PASSED*%0A\
+          🤫 Провалено: *$FAILED*%0A\
+          😶 Пропущено: *$SKIPPED*%0A\
           ━━━━━━━━━━━━━━━━━%0A\
-          🔗 [Allure отчет](https://elenakosova.github.io/autotest-project/)%0A\
-          🧪 [Allure TestOps](https://allure.autotests.cloud/project/5014)%0A\
+          📝 [Allure отчет](https://elenakosova.github.io/autotest-project/)%0A\
+          🧮 [Allure TestOps](https://allure.autotests.cloud/project/5014)%0A\
           📦 [Артефакты](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})%0A\
           ━━━━━━━━━━━━━━━━━%0A\
-          🏷️ *Run #${{ github.run_number }}*"
+          🚨 *Run #${{ github.run_number }}*"
 
           curl -s -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage \
           -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
