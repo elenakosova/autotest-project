@@ -7,20 +7,20 @@ pipeline {
     }
     
     stages {
+        stage('Check Node.js') {
+            steps {
+                sh '''
+                    echo "Checking Node.js installation..."
+                    node --version || echo "Node.js not found in system"
+                    npm --version || echo "npm not found in system"
+                '''
+            }
+        }
+        
         stage('Checkout') {
             steps {
                 git branch: 'main',
                 url: 'https://github.com/elenakosova/autotest-project.git'
-            }
-        }
-        
-        stage('Setup Node.js') {
-            steps {
-                script {
-                    // Проверяем доступные версии Node.js
-                    sh 'node --version || echo "Node.js not installed"'
-                    sh 'npm --version || echo "npm not installed"'
-                }
             }
         }
         
