@@ -31,3 +31,12 @@ new-autotest-project/
 ## UI для тестирования:
 
 Мы тестируем UI по адресу: https://realworld.qa.guru
+
+TestOps:
+![alt text](image.png)
+
+Allure:
+![alt text](image-1.png)
+
+Telegram:
+![alt text](image-2.png)
