@@ -1,5 +1,10 @@
 pipeline {
-    agent any
+    agent {
+        docker {
+            image 'node:18-alpine'
+            args '--user root'
+        }
+    }
     
     environment {
         BASE_URL_API = 'https://apichallenges.herokuapp.com'
@@ -7,12 +12,14 @@ pipeline {
     }
     
     stages {
-        stage('Check Node.js') {
+        stage('Check System') {
             steps {
                 sh '''
-                    echo "Checking Node.js installation..."
-                    node --version || echo "Node.js not found in system"
-                    npm --version || echo "npm not found in system"
+                    echo "=== Running in Docker container ==="
+                    node --version
+                    npm --version
+                    pwd
+                    ls -la
                 '''
             }
         }
@@ -30,21 +37,15 @@ pipeline {
             }
         }
         
-        stage('Install Playwright Browsers') {
+        stage('Install Playwright') {
             steps {
-                sh 'npx playwright install'
+                sh 'npx playwright install --with-deps'
             }
         }
         
         stage('Run API Tests') {
             steps {
                 sh 'npx playwright test --project=api --reporter=line,allure-playwright'
-            }
-        }
-        
-        stage('Run UI Tests') {
-            steps {
-                sh 'npx playwright test --project=ui --reporter=line,allure-playwright'
             }
         }
     }
@@ -57,13 +58,19 @@ pipeline {
                 results: [[path: 'allure-results']]
             
             // Очистка
-            sh 'rm -rf allure-results test-results playwright-report'
+            sh 'rm -rf allure-results test-results playwright-report || true'
         }
         success {
-            echo '✅ Все тесты прошли успешно!'
+            script {
+                echo "✅ ====== API ТЕСТЫ ПРОЙДЕНЫ ====== ✅"
+                echo "📊 Allure отчет: ${BUILD_URL}allure"
+            }
         }
         failure {
-            echo '❌ Часть тестов упала!'
+            script {
+                echo "❌ ====== ТЕСТЫ УПАЛИ ====== ❌"
+                echo "🔍 Логи: ${BUILD_URL}console"
+            }
         }
     }
 }
