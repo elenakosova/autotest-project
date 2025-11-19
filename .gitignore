@@ -1,0 +1,30 @@
+# Папка с зависимостями Node.js
+node_modules/
+
+# Отчеты и результаты тестов
+allure-results/
+allure-report/
+playwright-report/
+test-results.json
+test-results/
+
+# Файлы с переменными окружения
+.env
+.env.local
+
+# Системные файлы
+.DS_Store
+Thumbs.db
+
+# Логи
+*.log
+logs/
+
+# Настройки редактора
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Временные файлы Playwright
+*.zip
