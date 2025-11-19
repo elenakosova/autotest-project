@@ -52,11 +52,29 @@ pipeline {
     
     post {
         always {
+            // Публикация Allure отчета в Jenkins
             allure includeProperties: false,
                 jdk: '',
                 results: [[path: 'allure-results']],
                 report: 'allure-report'
             
+            // Интеграция с Allure TestOps
+            script {
+                try {
+                    allureTestOpsPublisher [
+                        enabled: true,
+                        baseUrl: 'https://allure.autotests.cloud',
+                        credentialsId: 'allure-testops-credentials',
+                        projectId: 'PW', 
+                        testOpsId: 'autotest-project',
+                        results: [[path: 'allure-results']]
+                    ]
+                } catch (Exception e) {
+                    echo "Allure TestOps integration failed: ${e.message}"
+                }
+            }
+            
+            // Очистка
             sh 'rm -rf allure-results test-results playwright-report'
         }
         success {
@@ -64,7 +82,7 @@ pipeline {
                 sh """
                 curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
                 -d chat_id="${TELEGRAM_CHAT_ID}" \
-                -d text="✅ Все тесты прошли успешно!%0A%0A📊 Посмотреть отчет: ${BUILD_URL}allure"
+                -d text="✅ Все тесты прошли успешно!%0A%0A📊 Jenkins отчет: ${BUILD_URL}allure%0A📈 Allure TestOps: https://allure.autotests.cloud/project/PW"
                 """
             }
         }
@@ -73,7 +91,7 @@ pipeline {
                 sh """
                 curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
                 -d chat_id="${TELEGRAM_CHAT_ID}" \
-                -d text="❌ Часть тестов упала!%0A%0A🔍 Проверить логи: ${BUILD_URL}console%0A📊 Посмотреть отчет: ${BUILD_URL}allure"
+                -d text="❌ Часть тестов упала!%0A%0A🔍 Проверить логи: ${BUILD_URL}console%0A📊 Jenkins отчет: ${BUILD_URL}allure%0A📈 Allure TestOps: https://allure.autotests.cloud/project/PW"
                 """
             }
         }
