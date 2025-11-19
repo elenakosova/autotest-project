@@ -3,6 +3,8 @@ name: CI Tests
 on:
   push:
     branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
   test:
@@ -16,9 +18,65 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '18'
+        cache: 'npm'
         
     - name: Install dependencies
       run: npm ci
         
     - name: Install Playwright
       run: npx playwright install
+        
+    - name: Run API tests
+      run: npx playwright test --project=api --reporter=line,allure-playwright
+        
+    - name: Run UI tests
+      run: npx playwright test --project=ui --reporter=line,allure-playwright
+        
+    - name: Generate Allure Report
+      run: |
+        npm install -g allure-commandline
+        allure generate allure-results --clean -o allure-report
+        
+    - name: Upload Allure results
+      uses: actions/upload-artifact@v4
+      with:
+        name: allure-results
+        path: allure-results/
+        retention-days: 30
+        
+    - name: Upload Allure report
+      uses: actions/upload-artifact@v4
+      with:
+        name: allure-report
+        path: allure-report/
+        retention-days: 30
+        
+    - name: Send Telegram notification on success
+      if: success()
+      uses: appleboy/telegram-action@master
+      with:
+        to: ${{ secrets.TELEGRAM_CHAT_ID }}
+        token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        message: |
+          ✅ Тесты прошли успешно!
+          
+          📊 Репозиторий: ${{ github.repository }}
+          🔗 Коммит: ${{ github.sha }}
+          🌐 Подробности: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          
+          Allure отчет будет доступен в артефактах сборки.
+
+    - name: Send Telegram notification on failure
+      if: failure()
+      uses: appleboy/telegram-action@master
+      with:
+        to: ${{ secrets.TELEGRAM_CHAT_ID }}
+        token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        message: |
+          ❌ Тесты упали!
+          
+          📊 Репозиторий: ${{ github.repository }}
+          🔗 Коммит: ${{ github.sha }}
+          🌐 Логи: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          
+          Проверьте логи для деталей.
