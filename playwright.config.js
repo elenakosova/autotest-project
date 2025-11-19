@@ -3,19 +3,7 @@ const { defineConfig } = require('@playwright/test');
 module.exports = defineConfig({
   testDir: './src/tests',
   timeout: 30000,
-  expect: {
-    timeout: 5000
-  },
   
-  // Настройки для запуска в разных окружениях
-  use: {
-    baseURL: 'https://realworld.qa.guru',
-    trace: 'on-first-retry',
-    screenshot: 'only-on-failure',
-    video: 'retain-on-failure',
-  },
-
-  // Настройки репортеров
   reporter: [
     ['html', { outputFolder: 'playwright-report', open: 'never' }],
     ['json', { outputFile: 'test-results.json' }],
@@ -26,17 +14,19 @@ module.exports = defineConfig({
     }]
   ],
 
-  // Проекты для разных типов тестов
+  use: {
+    baseURL: 'https://apichallenges.herokuapp.com',
+    trace: 'on-first-retry',
+    screenshot: 'only-on-failure',
+  },
+
   projects: [
     {
       name: 'api',
-      use: { 
-        baseURL: 'https://apichallenges.herokuapp.com'
-      },
       testMatch: '**/api/**/*.test.js'
     },
     {
-      name: 'ui',
+      name: 'ui', 
       use: { 
         baseURL: 'https://realworld.qa.guru'
       },
