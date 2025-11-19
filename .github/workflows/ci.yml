@@ -80,14 +80,20 @@ jobs:
 
       - name: Install allurectl
         run: |
-          curl -o allurectl -L "https://github.com/allure-framework/allurectl/releases/latest/download/allurectl_linux_amd64"
-          chmod +x allurectl
+          # Создаем директорию для allurectl
+          mkdir -p $HOME/bin
+          # Скачиваем allurectl
+          curl -o $HOME/bin/allurectl -L "https://github.com/allure-framework/allurectl/releases/latest/download/allurectl_linux_amd64"
+          # Делаем исполняемым
+          chmod +x $HOME/bin/allurectl
+          # Добавляем в PATH
+          echo "$HOME/bin" >> $GITHUB_PATH
 
       - name: Upload results to Allure TestOps
         if: always()
         run: |
-          ./allurectl upload allure-results \
-            --endpoint https://allure.autotests.cloud \
+          allurectl upload allure-results \
+            --endpoint https://allure.autotools.cloud \
             --project-id 5014 \
             --token ${{ secrets.ALLURE_TOKEN }} \
             --launch-name "GitHub Run #${{ github.run_number }}"
