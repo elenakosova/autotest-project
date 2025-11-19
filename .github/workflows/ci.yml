@@ -10,9 +10,15 @@ jobs:
   e2e:
     timeout-minutes: 30
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -75,8 +81,11 @@ jobs:
           publish_branch: gh-pages
           publish_dir: gh-pages
           force_orphan: true
+          full_commit_message: "Deploy Allure report for GitHub Run #${{ github.run_number }}"
           user_name: 'github-actions[bot]'
           user_email: 'github-actions[bot]@users.noreply.github.com'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install and setup allurectl
         if: always()
