@@ -1,26 +1,31 @@
+const { faker } = require('@faker-js/faker');
+
 class TodoBuilder {
   constructor() {
-    this.title = 'Default Todo';
-    this.description = 'Default Description';
+    this.title = null;
+    this.description = null;
     this.doneStatus = false;
   }
 
-  withTitle(title) {
-    this.title = title;
+  withTitle(title = null) {
+    this.title = title || `Todo ${Date.now()}`;
     return this;
   }
 
-  withDescription(description) {
-    this.description = description;
+  withDescription(description = null) {
+    this.description = description || `Description ${Date.now()}`;
     return this;
   }
 
-  withDoneStatus(doneStatus) {
+  withDoneStatus(doneStatus = false) {
     this.doneStatus = doneStatus;
     return this;
   }
 
   build() {
+    if (!this.title) this.withTitle();
+    if (!this.description) this.withDescription();
+    
     return {
       title: this.title,
       description: this.description,
@@ -28,11 +33,10 @@ class TodoBuilder {
     };
   }
 
-  // Статический метод для быстрого создания дефолтного туду
   static createDefault() {
     return new TodoBuilder()
-      .withTitle('Test Todo')
-      .withDescription('Test Description')
+      .withTitle()
+      .withDescription()
       .withDoneStatus(false)
       .build();
   }

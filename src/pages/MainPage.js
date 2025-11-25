@@ -23,15 +23,15 @@ exports.MainPage = class MainPage {
   }
 
   async navigateToProfile() {
-    await this.page.goto('https://realworld.qa.guru/#/profile');
+    await this.page.goto('/#/profile'); // ✅ Относительный путь
   }
 
   async navigateToHome() {
-    await this.page.goto('https://realworld.qa.guru/');
+    await this.page.goto('/'); // ✅ Относительный путь
   }
 
   async logout() {
-    await this.page.goto('https://realworld.qa.guru/#/logout');
+    await this.page.goto('/#/logout'); // ✅ Относительный путь
   }
 
   async checkArticleVisibility(articleTitle) {

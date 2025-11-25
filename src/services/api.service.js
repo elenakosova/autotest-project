@@ -1,9 +1,9 @@
 const { expect } = require('@playwright/test');
 
 class ApiService {
-  constructor(request) {
+  constructor(request, baseURL) { // ✅ Принимаем baseURL параметром
     this.request = request;
-    this.baseURL = 'https://apichallenges.herokuapp.com';
+    this.baseURL = baseURL || 'https://apichallenges.herokuapp.com';
   }
 
   // Challenger endpoints

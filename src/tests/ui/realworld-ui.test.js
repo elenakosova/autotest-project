@@ -1,135 +1,143 @@
-const { test, expect } = require('@playwright/test');
-const { MainPage } = require('../../pages/MainPage');
-const { AuthPage } = require('../../pages/AuthPage');
-const { EditArticlePage } = require('../../pages/EditArticlePage');
-const { ArticlePage } = require('../../pages/ArticlePage');
+const { test, expect } = require('../../fixtures/ui.fixture');
 const ArticleBuilder = require('../../builders/ArticleBuilder');
 
 test.describe('UI Tests RealWorld - Page Objects', () => {
-  let mainPage;
-  let authPage;
-  let editArticlePage;
-  let articlePage;
-
-  test.beforeEach(async ({ page }) => {
-    mainPage = new MainPage(page);
-    authPage = new AuthPage(page);
-    editArticlePage = new EditArticlePage(page);
-    articlePage = new ArticlePage(page);
-
-    await mainPage.navigateTo();
+  test.beforeEach(async ({ page, app }) => {
+    const email = process.env.TEST_USER_EMAIL;
+    const password = process.env.TEST_USER_PASSWORD;
     
-    const needsLogin = await mainPage.signInLink.isVisible().catch(() => true);
+    if (!email || !password) {
+      throw new Error('Требуются тестовые учетные данные TEST_USER_EMAIL и TEST_USER_PASSWORD в .env файле');
+    }
+
+    await app.main.navigateTo();
+    
+    const needsLogin = await app.main.signInLink.isVisible().catch(() => true);
     
     if (needsLogin) {
-      await mainPage.navigateToSignIn();
-      
-      const email = process.env.TEST_USER_EMAIL;
-      const password = process.env.TEST_USER_PASSWORD;
-      
-      if (!email || !password) {
-        test.skip(true, 'Требуются тестовые учетные данные');
-      }
-      
-      await authPage.login(email, password);
+      await app.main.navigateToSignIn();
+      await app.auth.login(email, password);
     }
     
-    await mainPage.assertUserIsLoggedIn();
+    await app.main.assertUserIsLoggedIn();
   });
 
-  test('Создание новой статьи', async ({ page }) => {
+  test('Создание новой статьи', async ({ app }) => {
+    // Arrange
     const testArticle = ArticleBuilder.createDefault();
     
-    await mainPage.navigateToNewArticle();
-    await editArticlePage.assertFormIsLoaded();
-
-    await editArticlePage.createArticle(
+    // Act
+    await app.main.navigateToNewArticle();
+    await app.editArticle.assertFormIsLoaded();
+    await app.editArticle.createArticle(
       testArticle.title,
       testArticle.description,
       testArticle.content
     );
 
-    // Вместо проверки возвращаемого значения, проверяем что статья загрузилась
-    await articlePage.assertArticleIsLoaded();
-    
-    const actualTitle = await articlePage.getArticleTitle();
+    // Assert - проверяем только title и content
+    await app.article.assertArticleIsLoaded();
+    const actualTitle = await app.article.getArticleTitle();
+    const actualContent = await app.article.getArticleContent();
+
     expect(actualTitle).toBe(testArticle.title);
+    expect(actualContent).toContain(testArticle.content);
   });
 
-  test('Редактирование статьи', async ({ page }) => {
+  test('Редактирование статьи', async ({ app }) => {
+    // Arrange
     const originalArticle = ArticleBuilder.createDefault();
-    await mainPage.navigateToNewArticle();
-    await editArticlePage.createArticle(
+    await app.main.navigateToNewArticle();
+    await app.editArticle.createArticle(
       originalArticle.title,
       originalArticle.description,
       originalArticle.content
     );
 
-    await articlePage.editArticle();
-    await editArticlePage.assertIsEditPage();
+    // Act
+    await app.article.editArticle();
+    await app.editArticle.assertIsEditPage();
     
     const updatedArticle = ArticleBuilder.createDefault();
-    await editArticlePage.updateArticle(
+    await app.editArticle.updateArticle(
       updatedArticle.title,
       updatedArticle.description,
       updatedArticle.content
     );
 
-    await articlePage.assertArticleIsLoaded();
-    const actualTitle = await articlePage.getArticleTitle();
+    // Assert - проверяем только title и content
+    await app.article.assertArticleIsLoaded();
+    const actualTitle = await app.article.getArticleTitle();
+    const actualContent = await app.article.getArticleContent();
+
     expect(actualTitle).toBe(updatedArticle.title);
+    expect(actualContent).toContain(updatedArticle.content);
   });
 
-  test('Удаление статьи', async ({ page }) => {
+  test('Удаление статьи', async ({ app }) => {
+    // Arrange
     const testArticle = ArticleBuilder.createDefault();
-    await mainPage.navigateToNewArticle();
-    await editArticlePage.createArticle(
+    await app.main.navigateToNewArticle();
+    await app.editArticle.createArticle(
       testArticle.title,
       testArticle.description,
       testArticle.content
     );
 
-    const articleTitle = await articlePage.getArticleTitle();
-    await articlePage.deleteArticle();
+    const articleTitle = await app.article.getArticleTitle();
+    
+    // Act
+    await app.article.deleteArticle();
 
-    await mainPage.navigateToHome();
-    const articleVisible = await mainPage.checkArticleVisibility(articleTitle);
+    // Assert
+    await app.main.navigateToHome();
+    const articleVisible = await app.main.checkArticleVisibility(articleTitle);
     expect(articleVisible).toBe(false);
   });
 
-  test('Добавление комментария к статье', async ({ page }) => {
+  test('Добавление комментария к статье', async ({ app }) => {
+    // Arrange
     const testArticle = ArticleBuilder.createDefault();
-    await mainPage.navigateToNewArticle();
-    await editArticlePage.createArticle(
+    await app.main.navigateToNewArticle();
+    await app.editArticle.createArticle(
       testArticle.title,
       testArticle.description,
       testArticle.content
     );
 
     const testComment = `Тестовый комментарий ${Date.now()}`;
-    await articlePage.addComment(testComment);
+    
+    // Act
+    await app.article.addComment(testComment);
 
-    await articlePage.assertCommentIsAdded(testComment);
-    const commentsCount = await articlePage.getCommentsCount();
+    // Assert
+    await app.article.assertCommentIsAdded(testComment);
+    const commentsCount = await app.article.getCommentsCount();
     expect(commentsCount).toBeGreaterThan(0);
   });
 
-  test('Создание статьи с Markdown', async ({ page }) => {
+  test('Создание статьи с Markdown', async ({ app }) => {
+    // Arrange
     const testArticle = ArticleBuilder.createWithMarkdown();
     
-    await mainPage.navigateToNewArticle();
-    await editArticlePage.createArticle(
+    // Act
+    await app.main.navigateToNewArticle();
+    await app.editArticle.createArticle(
       testArticle.title,
       testArticle.description,
       testArticle.content
     );
 
-    await articlePage.assertArticleIsLoaded();
-    const actualTitle = await articlePage.getArticleTitle();
+    // Assert - проверяем только title и content
+    await app.article.assertArticleIsLoaded();
+    const actualTitle = await app.article.getArticleTitle();
+    const actualContent = await app.article.getArticleContent();
+
     expect(actualTitle).toBe(testArticle.title);
+    expect(actualContent).toContain(testArticle.content);
   });
 
-  test.afterEach(async () => {
-    await mainPage.logout();
+  test.afterEach(async ({ app }) => {
+    await app.main.logout();
   });
 });
