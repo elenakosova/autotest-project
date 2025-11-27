@@ -2,7 +2,7 @@ const { test, expect } = require('../../fixtures/ui.fixture');
 const ArticleBuilder = require('../../builders/ArticleBuilder');
 
 test.describe('UI Tests RealWorld - Page Objects', () => {
-  test.beforeEach(async ({ page, app }) => {
+  test.beforeEach(async ({ app }) => {
     const email = process.env.TEST_USER_EMAIL;
     const password = process.env.TEST_USER_PASSWORD;
     
@@ -35,13 +35,18 @@ test.describe('UI Tests RealWorld - Page Objects', () => {
       testArticle.content
     );
 
-    // Assert - проверяем только title и content
+    // Assert - проверяем title и content на странице статьи
     await app.article.assertArticleIsLoaded();
     const actualTitle = await app.article.getArticleTitle();
     const actualContent = await app.article.getArticleContent();
 
     expect(actualTitle).toBe(testArticle.title);
     expect(actualContent).toContain(testArticle.content);
+    
+    // Assert - проверяем description через форму редактирования
+    await app.article.editArticle();
+    const actualDescription = await app.editArticle.getDescriptionValue();
+    expect(actualDescription).toBe(testArticle.description);
   });
 
   test('Редактирование статьи', async ({ app }) => {
@@ -65,13 +70,18 @@ test.describe('UI Tests RealWorld - Page Objects', () => {
       updatedArticle.content
     );
 
-    // Assert - проверяем только title и content
+    // Assert - проверяем title и content на странице статьи
     await app.article.assertArticleIsLoaded();
     const actualTitle = await app.article.getArticleTitle();
     const actualContent = await app.article.getArticleContent();
 
     expect(actualTitle).toBe(updatedArticle.title);
     expect(actualContent).toContain(updatedArticle.content);
+    
+    // Assert - проверяем description через форму редактирования
+    await app.article.editArticle();
+    const actualDescription = await app.editArticle.getDescriptionValue();
+    expect(actualDescription).toBe(updatedArticle.description);
   });
 
   test('Удаление статьи', async ({ app }) => {
@@ -128,13 +138,18 @@ test.describe('UI Tests RealWorld - Page Objects', () => {
       testArticle.content
     );
 
-    // Assert - проверяем только title и content
+    // Assert - проверяем title и content на странице статьи
     await app.article.assertArticleIsLoaded();
     const actualTitle = await app.article.getArticleTitle();
     const actualContent = await app.article.getArticleContent();
 
     expect(actualTitle).toBe(testArticle.title);
     expect(actualContent).toContain(testArticle.content);
+    
+    // Assert - проверяем description через форму редактирования
+    await app.article.editArticle();
+    const actualDescription = await app.editArticle.getDescriptionValue();
+    expect(actualDescription).toBe(testArticle.description);
   });
 
   test.afterEach(async ({ app }) => {

@@ -24,7 +24,7 @@ exports.EditArticlePage = class EditArticlePage {
     
     // Ожидаем перехода на страницу статьи
     try {
-      await this.page.waitForURL(/.*article/, { timeout: 10000 });
+      await this.page.waitForURL(/.*article/);
       await this.page.waitForLoadState('networkidle');
       return true;
     } catch (error) {
@@ -51,5 +51,10 @@ exports.EditArticlePage = class EditArticlePage {
 
   async assertIsEditPage() {
     await expect(this.updateArticleButton).toBeVisible();
+  }
+
+  // Добавляем метод для получения значения описания
+  async getDescriptionValue() {
+    return await this.articleDescriptionInput.inputValue();
   }
 };

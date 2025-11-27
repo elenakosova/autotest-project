@@ -1,3 +1,9 @@
+// Константы для тестовых данных
+const TEST_DATA = {
+  DEFAULT_PASSWORD: `TestPass${Date.now()}!`,
+  SHORT_PASSWORD: '12345'
+};
+
 class UserBuilder {
   constructor() {
     this.user = {
@@ -16,7 +22,7 @@ class UserBuilder {
     this.user = {
       username: `testuser_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`,
       email: `test_${Date.now()}@example.com`,
-      password: 'Password123!',
+      password: TEST_DATA.DEFAULT_PASSWORD,
       bio: 'Test bio for automated testing'
     };
     return this;
@@ -82,7 +88,7 @@ class UserBuilder {
    * Генерация пользователя с коротким паролем
    */
   withShortPassword() {
-    this.user.password = '123';
+    this.user.password = TEST_DATA.SHORT_PASSWORD;
     return this;
   }
 

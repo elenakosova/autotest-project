@@ -1,5 +1,3 @@
-const { faker } = require('@faker-js/faker');
-
 class ArticleBuilder {
   constructor() {
     this.article = {

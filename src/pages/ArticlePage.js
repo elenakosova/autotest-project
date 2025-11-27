@@ -5,7 +5,6 @@ exports.ArticlePage = class ArticlePage {
     this.page = page;
     this.articleTitle = page.locator('.banner h1');
     this.articleContent = page.locator('.article-content');
-    this.articleDescription = page.locator('.article-content p').first(); 
     this.editArticleButton = page.locator('a:has-text("Edit Article")').first();
     this.deleteArticleButton = page.locator('button:has-text("Delete Article")').first();
     this.commentInput = page.locator('textarea[placeholder="Write a comment..."]');
@@ -15,10 +14,6 @@ exports.ArticlePage = class ArticlePage {
 
   async getArticleTitle() {
     return await this.articleTitle.textContent();
-  }
-
-  async getArticleDescription() {
-    return await this.articleDescription.textContent();
   }
 
   async getArticleContent() {
